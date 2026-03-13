@@ -1,0 +1,22 @@
+# Action Log
+
+- 2026-03-10 09:39:36 -0300 | delete | `agentlink/__init__.py`.
+- 2026-03-10 09:39:36 -0300 | delete | `agentlink/__main__.py`.
+- 2026-03-10 09:39:36 -0300 | delete | `agentlink/cli.py`.
+- 2026-03-10 09:39:36 -0300 | delete | `agentlink/config.py`.
+- 2026-03-10 09:39:36 -0300 | delete | `agentlink/symlink.py`.
+- 2026-03-10 09:40:20 -0300 | delete | `agentlink/`.
+- 2026-03-10 09:39:36 -0300 | edit | `.flox/env.json`.
+- 2026-03-10 09:39:36 -0300 | create | `logs.md`.
+- 2026-03-10 10:32:52 -0300 | edit | `.github/workflows/ci.yml`.
+- 2026-03-11 09:55:57 -0300 | edit | project folder move to `~/code/Legion` requested.
+- 2026-03-12 | edit | project folder renamed to `~/code/symlegion`.
+- 2026-03-12 12:33:32 -0300 | edit | `pyproject.toml`.
+- 2026-03-12 12:33:32 -0300 | edit | `pyproject.toml` metadata fix.
+- 2026-03-12 13:24:36 -0300 | edit | `README.md` add `agentlink` credit.
+- 2026-03-12 13:27:51 -0300 | edit | `README.md` link original `agentlink` repo and note Python port.
+- 2026-03-12 13:31:23 -0300 | edit | `README.md` tighten `agentlink` attribution.
+- 2026-03-13 20:45:53 -0300 | edit | `README.md` resolve merge conflict.
+- 2026-03-13 20:45:53 -0300 | edit | `pyproject.toml` resolve merge conflict.
+- 2026-03-13 20:45:53 -0300 | edit | `tests/test_config.py` resolve merge conflict.
+- 2026-03-13 20:45:53 -0300 | edit | `tests/test_integration.py` resolve merge conflict.
