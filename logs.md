@@ -35,3 +35,4 @@
 - 2026-03-13 23:13:08 -0300 | edit | `README.md` note that `init` includes both config examples.
 - 2026-03-13 23:14:15 -0300 | edit | `pyproject.toml` bump version to `0.3.0`.
 - 2026-03-13 23:14:15 -0300 | edit | `symlegion.py` bump CLI version to `0.3.0`.
+- 2026-03-13 23:15:25 -0300 | edit | `.gitignore` ignore `uv.lock`.
