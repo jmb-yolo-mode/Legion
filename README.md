@@ -98,6 +98,11 @@ symlegion sync
 
 `init` creates a starter `.symlegion.yaml` with both `direct` and `recursive` examples.
 
+The starter config assumes OpenCode as the source of truth and includes mappings for:
+
+- rules: `AGENTS.md` -> `CLAUDE.md`, `.claude/CLAUDE.md`, `.goosehints`.
+- commands/prompts/recipes: `.opencode/commands/` -> `.claude/commands/`, `.pi/prompts/`, `.goose/recipes/`.
+
 ### Commands
 
 ```bash
@@ -108,13 +113,27 @@ symlegion clean
 symlegion doctor
 ```
 
+### Command behavior
+
+- `init` creates a starter YAML file. By default it writes `.symlegion.yaml` in the current directory. With `--config`, it writes to the provided path.
+- `sync` validates each source and creates or repairs the configured links.
+- `check` reports source and link status without changing anything.
+- `clean` removes only links managed by the selected config file. It never removes source files or folders.
+- `doctor` checks symlink support, binary availability, and default config locations.
+
 ### Helpful flags
 
 ```bash
 symlegion sync --dry-run
 symlegion sync --force
 symlegion --verbose sync
+symlegion --config ~/somewhere/project.yaml sync
 ```
+
+- `--config` chooses a specific YAML file.
+- `--dry-run` previews changes without writing anything.
+- `--force` allows Symlegion to replace wrong targets, replace existing non-symlink paths during sync, and accept a symlink as the source.
+- `--verbose` prints each source and link as it is processed.
 
 ### Without init (auto-config)
 
@@ -123,12 +142,24 @@ symlegion sync
 ```
 
 What it does:
-- Reads `.symlegion.yaml` in CWD.
-- Creates/fixes symlinks listed under each group so they point to that group's `source`.
+
+- If `--config` is provided, Symlegion uses that file.
+- Otherwise it reads `.symlegion.yaml` in the current directory.
+- It creates or fixes symlinks listed under each group so they point to that group's `source`.
 
 If there's **no** `.symlegion.yaml` in CWD:
 - Falls back to `~/.config/symlegion/config.yaml` (global).
 - If missing, it **auto-creates** a sane default and tells you.
+
+### Config file path resolution
+
+- `symlegion sync` / `check` / `clean`:
+	- use `--config <file>` when provided.
+	- otherwise use `.symlegion.yaml` in the current working directory.
+	- otherwise fall back to `~/.config/symlegion/config.yaml`.
+- `symlegion init`:
+	- creates `.symlegion.yaml` in the current working directory by default.
+	- creates the file passed through `--config` when provided.
 
 ---
 
@@ -152,7 +183,7 @@ Place a single file at repo root:
 Notes:
 - Omitting `mode` is the same as `mode: direct`.
 - Each `source` can be a real file or a real folder, but not a symlink unless you use `--force`.
-- Paths in `links` are relative to the project root.
+- A config file is a YAML list of groups. Each group has one `source`, one or more `links`, and optional recursive fields.
 
 ### Direct mode
 
@@ -167,7 +198,10 @@ Notes:
 ```
 
 - `source` can be absolute or relative.
-- Relative `source` and `links` are resolved from the config file directory.
+- Relative `source` and `links` are resolved from the folder that contains the YAML config file.
+- Absolute `source` values stay absolute.
+- `~` expands to `$HOME`.
+- Direct mode is best when one repo or one config file explicitly manages known paths.
 
 ### Recursive mode
 
@@ -186,11 +220,70 @@ Use `recursive` when you want Symlegion to scan one or more parent folders, find
 ```
 
 - In recursive mode, `source` and every entry in `links` must be relative paths.
-- `search` entries must be absolute paths, except `~`, which expands to `$HOME`.
+- `search` entries may be absolute or relative.
+- Relative `search` entries are resolved from the folder that contains the YAML config file.
+- `~` in `search` entries expands to `$HOME`.
 - If `depth` is omitted, Symlegion uses `5`.
 - Symlegion walks each search root down to `depth` levels, looking for `source` in each candidate folder.
 - When it finds a match, it creates every link in `links` relative to that matched folder root.
 - If one or more search paths do not exist, Symlegion prints a warning and continues.
+- Recursive mode is best when one config file manages many repos that share the same layout.
+
+### How recursive matching works
+
+Given this config:
+
+```yaml
+- mode: recursive
+  source: .opencode/commands/
+  links:
+    - .claude/commands/
+    - .pi/prompts/
+    - .goose/recipes/
+  search:
+    - ~/code/
+    - ../workspace/
+  depth: 3
+```
+
+- Symlegion scans every folder under each `search` root until depth `3`.
+- When it finds a folder containing `.opencode/commands/`, that folder becomes the matched project root.
+- It then creates:
+	- `.claude/commands/` -> `.opencode/commands/`.
+	- `.pi/prompts/` -> `.opencode/commands/`.
+	- `.goose/recipes/` -> `.opencode/commands/`.
+- If `~/code/client-a/project-x` matches, all links are created inside `~/code/client-a/project-x`.
+
+### Selected config examples
+
+Starter config generated by `init`:
+
+```yaml
+- mode: direct
+  source: AGENTS.md
+  links:
+    - CLAUDE.md
+    - .claude/CLAUDE.md
+    - .goosehints
+
+- mode: direct
+  source: .opencode/commands/
+  links:
+    - .claude/commands/
+    - .pi/prompts/
+    - .goose/recipes/
+
+# - mode: recursive
+#   source: .opencode/commands/
+#   links:
+#     - .claude/commands/
+#     - .pi/prompts/
+#     - .goose/recipes/
+#   search:
+#     - ~/koofr/workspace/
+#     - ~/code/
+#   depth: 3
+```
 
 ### Global config
 

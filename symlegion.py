@@ -18,7 +18,7 @@ from typing import Any, Iterator, cast
 
 import yaml
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 DEFAULT_RECURSIVE_DEPTH = 5
 
 
@@ -60,7 +60,9 @@ class LinkGroup:
 
     def expand_paths(self, config_dir: Path) -> None:
         if self.mode == "recursive":
-            self.search = [str(_expand_search_path(path)) for path in self.search or []]
+            self.search = [
+                str(_expand_search_path(path, config_dir)) for path in self.search or []
+            ]
             return
         self.source = str(_expand_path(self.source, config_dir))
         self.links = [str(_expand_path(link, config_dir)) for link in self.links]
@@ -139,10 +141,10 @@ def _expand_path(raw_path: str, base_dir: Path) -> Path:
     return Path(os.path.abspath(path))
 
 
-def _expand_search_path(raw_path: str) -> Path:
+def _expand_search_path(raw_path: str, base_dir: Path) -> Path:
     path = Path(raw_path).expanduser()
     if not path.is_absolute():
-        raise ValueError("search paths must be absolute or start with '~'")
+        path = base_dir / path
     return Path(os.path.abspath(path))
 
 
@@ -214,7 +216,9 @@ def load_config(path: Path) -> Config:
     return cfg
 
 
-def find_config_path() -> tuple[Path, bool]:
+def find_config_path(config_override: str | None = None) -> tuple[Path, bool]:
+    if config_override:
+        return Path(os.path.abspath(Path(config_override).expanduser())), True
     project = Path.cwd() / ".symlegion.yaml"
     if project.exists():
         return project.resolve(), True
@@ -245,24 +249,33 @@ def create_default_global_config(path: Path) -> None:
 def create_project_config(path: Path) -> None:
     path.write_text(
         """# Choose one or more source groups to manage.
-# Direct mode is the default when mode is omitted.
+# OpenCode is the default source in these examples.
+
+# Rules / instructions.
+# OpenCode and Pi both use AGENTS.md.
 - mode: direct
-  source: CLAUDE.md
+  source: AGENTS.md
   links:
-    - AGENTS.md                    # Root level
-    - OPENCODE.md                  # Root level
-    # - .agent/AGENTS.md           # Inside .agent directory
-    # - .codex/instructions.md     # Different name and location
-    # - config/ai/GEMINI.md        # Nested directories
-# - mode: direct
-#   source: docs/instructions
-#   links:
-#     - .ai/instructions
+    - CLAUDE.md                    # Claude Code root rules file
+    - .claude/CLAUDE.md            # Claude Code local rules file
+    - .goosehints                  # Goose project hints
+
+# Commands / prompts / recipes.
+# OpenCode commands are mirrored to Claude, Pi, and Goose.
+- mode: direct
+  source: .opencode/commands/
+  links:
+    - .claude/commands/            # Claude Code legacy commands path
+    - .pi/prompts/                 # Pi prompt templates
+    - .goose/recipes/              # Goose recipes
+
+# Example for scanning many repos from one config file.
 # - mode: recursive
 #   source: .opencode/commands/
 #   links:
 #     - .claude/commands/
 #     - .pi/prompts/
+#     - .goose/recipes/
 #   search:
 #     - ~/koofr/workspace/
 #     - ~/code/
@@ -420,32 +433,132 @@ def _warning(msg: str) -> None:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="symlegion",
-        description="Keep your AI instruction files in sync with zero magic — just symlinks",
+        description=(
+            "Keep AI instruction files, command folders, prompt folders, and recipe "
+            "folders in sync using symlinks."
+        ),
+        epilog=(
+            "Config lookup:\n"
+            "  - with --config: use that YAML file\n"
+            "  - otherwise: use .symlegion.yaml in the current directory\n"
+            "  - if missing: fall back to ~/.config/symlegion/config.yaml\n\n"
+            "Path resolution:\n"
+            "  - direct mode: relative source and links resolve from the YAML file folder\n"
+            "  - recursive mode: source and links stay relative to each matched project root\n"
+            "  - recursive search paths may be absolute, use ~, or be relative to the YAML file folder\n\n"
+            "Typical flow:\n"
+            "  symlegion init\n"
+            "  edit .symlegion.yaml\n"
+            "  create your source file or folder\n"
+            "  symlegion sync\n"
+            "  symlegion check\n\n"
+            "Examples:\n"
+            "  symlegion sync\n"
+            "  symlegion --config ~/configs/work.yaml sync\n"
+            "  symlegion --dry-run --verbose sync\n"
+            "  symlegion clean --force"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("-f", "--force", action="store_true")
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would change without creating, replacing, or removing links",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Replace wrong links and non-symlink files, and allow symlink sources",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print each processed source, link, and warning",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Use a specific YAML config file instead of the default project/global lookup",
+    )
     parser.add_argument("--version", action="version", version=VERSION)
 
     subs = parser.add_subparsers(dest="command", required=True)
-    subs.add_parser("init", help="Create .symlegion.yaml in current directory")
-    subs.add_parser("sync", help="Create/fix symlinks based on configuration")
-    subs.add_parser("check", help="Check status of symlinks")
-    subs.add_parser("clean", help="Remove managed symlinks")
-    subs.add_parser("doctor", help="Check environment and permissions")
+
+    subs.add_parser(
+        "init",
+        help="Create a starter config file with direct and recursive examples",
+        description=(
+            "Create a starter YAML config. By default it writes .symlegion.yaml in the "
+            "current directory. With --config, it writes to the provided path instead."
+        ),
+        epilog=(
+            "The generated config includes starter mappings for:\n"
+            "  - rules: OpenCode/Pi via AGENTS.md, Claude Code via CLAUDE.md, Goose via .goosehints\n"
+            "  - commands/prompts/recipes: .opencode/commands -> .claude/commands, .pi/prompts, .goose/recipes"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subs.add_parser(
+        "sync",
+        help="Create or fix links defined in the selected config file",
+        description=(
+            "Validate each source and create or repair links. In direct mode, paths are "
+            "resolved from the YAML file folder. In recursive mode, Symlegion searches for "
+            "matching project roots and creates links inside each match."
+        ),
+        epilog=(
+            "Recursive mode notes:\n"
+            "  - source and links must be relative\n"
+            "  - search paths may be absolute, use ~, or be relative to the YAML file folder\n"
+            "  - missing search paths only emit warnings\n"
+            "  - depth defaults to 5"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subs.add_parser(
+        "check",
+        help="Show source and link status without changing anything",
+        description=(
+            "Report whether each configured source exists and whether each managed link is "
+            "missing, correct, broken, or pointing to the wrong target."
+        ),
+        epilog="Exit status is 0 when all resolved links are correct, otherwise 1.",
+    )
+    subs.add_parser(
+        "clean",
+        help="Remove links managed by the selected config file",
+        description=(
+            "Remove only links that currently point to the configured source, plus broken "
+            "symlinks for configured link paths. Source files and folders are never removed."
+        ),
+        epilog="Use --dry-run to preview removals and --force when replacing non-symlink paths during sync.",
+    )
+    subs.add_parser(
+        "doctor",
+        help="Check symlink support, binary availability, and config locations",
+        description=(
+            "Run environment checks for the current machine and show whether Symlegion can "
+            "create symlinks and access its default config locations."
+        ),
+    )
     return parser
 
 
 def _run_init(args: argparse.Namespace) -> int:
-    config_path = Path(".symlegion.yaml")
+    if args.config:
+        config_path = Path(os.path.abspath(Path(args.config).expanduser()))
+    else:
+        config_path = (Path.cwd() / ".symlegion.yaml").resolve()
     if config_path.exists() and not args.force:
-        _error(".symlegion.yaml already exists (use --force to overwrite)")
+        _error(f"{config_path} already exists (use --force to overwrite)")
         return 1
 
-    if not Path(".git").exists() and not args.force:
+    if not (config_path.parent / ".git").exists() and not args.force:
         response = (
             input(
-                "No .git directory found. Create .symlegion.yaml here anyway? (y/N): "
+                f"No .git directory found in {config_path.parent}. Create {config_path.name} here anyway? (y/N): "
             )
             .strip()
             .lower()
@@ -455,9 +568,10 @@ def _run_init(args: argparse.Namespace) -> int:
             return 0
 
     if args.dry_run:
-        _info("Would create .symlegion.yaml")
+        _info(f"Would create {config_path}")
         return 0
 
+    config_path.parent.mkdir(parents=True, exist_ok=True)
     create_project_config(config_path)
     _ok(f"Created {config_path.resolve()}")
     _info(
@@ -512,7 +626,7 @@ def _warn_missing_search_roots(group: LinkGroup) -> None:
 
 
 def _run_sync(args: argparse.Namespace) -> int:
-    config_path, is_project = find_config_path()
+    config_path, is_project = find_config_path(args.config)
     try:
         cfg = _load_or_create_config(config_path, is_project, args.dry_run)
     except RuntimeError as exc:
@@ -558,7 +672,7 @@ def _run_sync(args: argparse.Namespace) -> int:
 
 
 def _run_check(args: argparse.Namespace) -> int:
-    config_path, is_project = find_config_path()
+    config_path, is_project = find_config_path(args.config)
     if not config_path.exists():
         _error(
             "No .symlegion.yaml found in current directory"
@@ -619,7 +733,7 @@ def _run_check(args: argparse.Namespace) -> int:
 
 
 def _run_clean(args: argparse.Namespace) -> int:
-    config_path, _ = find_config_path()
+    config_path, _ = find_config_path(args.config)
     if not config_path.exists():
         _error(f"No config found at {config_path}")
         return 1

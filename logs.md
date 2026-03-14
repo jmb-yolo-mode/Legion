@@ -36,3 +36,23 @@
 - 2026-03-13 23:14:15 -0300 | edit | `pyproject.toml` bump version to `0.3.0`.
 - 2026-03-13 23:14:15 -0300 | edit | `symlegion.py` bump CLI version to `0.3.0`.
 - 2026-03-13 23:15:25 -0300 | edit | `.gitignore` ignore `uv.lock`.
+- 2026-03-13 23:20:27 -0300 | edit | `symlegion.py` resolve recursive search paths relative to the config folder.
+- 2026-03-13 23:20:27 -0300 | edit | `tests/test_config.py` cover relative recursive search paths.
+- 2026-03-13 23:20:27 -0300 | edit | `tests/test_integration.py` cover relative recursive search resolution from the config directory.
+- 2026-03-13 23:20:27 -0300 | edit | `README.md` document relative recursive search paths.
+- 2026-03-13 23:25:46 -0300 | edit | `symlegion.py` expand `init` template with OpenCode, Claude Code, Pi, and Goose rules and command paths.
+- 2026-03-13 23:25:46 -0300 | edit | `tests/test_integration.py` verify the enriched `init` template paths.
+- 2026-03-13 23:27:18 -0300 | edit | `symlegion.py` add `--config` support for targeting a specific YAML file.
+- 2026-03-13 23:27:18 -0300 | edit | `tests/test_config.py` cover explicit config path override resolution.
+- 2026-03-13 23:27:18 -0300 | edit | `tests/test_integration.py` cover explicit config path usage and updated init defaults.
+- 2026-03-13 23:27:18 -0300 | edit | `README.md` document `--config` usage.
+- 2026-03-13 23:34:40 -0300 | edit | `symlegion.py` expand CLI help so `--help` explains config lookup, path resolution, flags, and command behavior.
+- 2026-03-13 23:34:40 -0300 | edit | `README.md` document command behavior, config lookup, and detailed recursive matching.
+- 2026-03-13 23:34:40 -0300 | edit | `tests/test_integration.py` verify help output covers core usage details.
+- 2026-03-14 14:28:21 -0300 | edit | `pyproject.toml` bump version to `0.3.1`.
+- 2026-03-14 14:28:21 -0300 | edit | `symlegion.py` bump CLI version to `0.3.1`.
+- 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.2.0-py3-none-any.whl`.
+- 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.2.0.tar.gz`.
+- 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.3.0-py3-none-any.whl`.
+- 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.3.0.tar.gz`.
+- 2026-03-13 23:18:55 -0300 | edit | `logs.md` record dist cleanup.

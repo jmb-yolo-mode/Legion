@@ -57,6 +57,7 @@ def test_load_recursive_config_expands_search_paths(tmp_path: Path, monkeypatch)
   search:
     - ~/workspace
     - /tmp/search-root
+    - local-search
   depth: 3
 """,
         encoding="utf-8",
@@ -70,6 +71,7 @@ def test_load_recursive_config_expands_search_paths(tmp_path: Path, monkeypatch)
     assert cfg.groups[0].search == [
         str(home / "workspace"),
         "/tmp/search-root",
+        str(tmp_path / "local-search"),
     ]
     assert cfg.groups[0].depth == 3
 
@@ -145,3 +147,10 @@ def test_find_config_path(tmp_path: Path, monkeypatch):
     path, is_project = find_config_path()
     assert is_project
     assert path == (tmp_path / ".symlegion.yaml").resolve()
+
+
+def test_find_config_path_uses_explicit_override(tmp_path: Path):
+    config_path = tmp_path / "configs" / "custom.yaml"
+    path, is_project = find_config_path(str(config_path))
+    assert is_project
+    assert path == config_path.resolve()
