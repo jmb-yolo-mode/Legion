@@ -20,3 +20,5 @@
 - 2026-03-13 20:45:53 -0300 | edit | `pyproject.toml` resolve merge conflict.
 - 2026-03-13 20:45:53 -0300 | edit | `tests/test_config.py` resolve merge conflict.
 - 2026-03-13 20:45:53 -0300 | edit | `tests/test_integration.py` resolve merge conflict.
+- 2026-03-13 22:27:59 -0300 | edit | `pyproject.toml` bump version to `0.2.0`.
+- 2026-03-13 22:27:59 -0300 | edit | `symlegion.py` bump CLI version to `0.2.0`.

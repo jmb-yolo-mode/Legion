@@ -17,7 +17,7 @@ from typing import Any, cast
 
 import yaml
 
-VERSION = "dev"
+VERSION = "0.2.0"
 
 
 # ---------------------------------------------------------------------------
