@@ -51,6 +51,8 @@
 - 2026-03-13 23:34:40 -0300 | edit | `tests/test_integration.py` verify help output covers core usage details.
 - 2026-03-14 14:28:21 -0300 | edit | `pyproject.toml` bump version to `0.3.1`.
 - 2026-03-14 14:28:21 -0300 | edit | `symlegion.py` bump CLI version to `0.3.1`.
+- 2026-03-17 20:59:43 -0300 | create | `CHANGELOG.md` add long-form `0.3.1` release notes.
+- 2026-03-17 20:59:43 -0300 | create | `.github/release-notes/v0.3.1.md` add short GitHub release notes.
 - 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.2.0-py3-none-any.whl`.
 - 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.2.0.tar.gz`.
 - 2026-03-13 23:18:55 -0300 | delete | `dist/symlegion-0.3.0-py3-none-any.whl`.
